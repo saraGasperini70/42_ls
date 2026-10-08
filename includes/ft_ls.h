@@ -8,6 +8,9 @@
 #include <errno.h>
 #include <stdbool.h>
 #include <stdio.h>
+#include <pwd.h>
+#include <grp.h>
+#include <time.h>
 
 typedef struct s_map { // trying to reimplement C++ std::map if needed
 	struct s_map 	*prev;

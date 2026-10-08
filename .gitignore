@@ -1,0 +1,5 @@
+my_output.log
+ref_output.log
+**/*.o
+*/*.o
+ft_ls

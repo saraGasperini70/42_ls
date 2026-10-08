@@ -41,20 +41,38 @@ void parse_flags(t_ls *ls, char **av, int ac, int i) {
 		}
 	}
 }
+static int compare_nodes(t_syst *left, t_syst *right, t_flags flags)
+{
+	int result = 0;
+	if (flags.t && left->info.st_mtime != right->info.st_mtime)
+	{
+		if (left->info.st_mtime > right->info.st_mtime)
+			return (-1);
+		return (1);
+	}
+	else
+		result = ft_strncmp(left->name, right->name, ft_strlen(left->name));
+	if (flags.r)
+		result = -result;
+	return (result);
+}
 
-static void add_node(t_syst **list, t_syst *node) {
+static void add_node(t_syst **list, t_syst *node, t_flags flags) {
 	t_syst *last;
 
-	if (*list == NULL) {
+	if (*list == NULL || compare_nodes(node, *list, flags) < 0) {
+		node->next = *list;
 		*list = node;
 		return;
 	}
 	last = *list;
-	while(last->next != NULL) {
+	while(last->next != NULL && compare_nodes(node, last->next, flags) >= 0) {
 		last = last->next;
 	}
+	node->next = last->next;
 	last->next = node;
 }
+
 
 void parse_contents(const char *path, t_syst **dirs, t_syst **files, t_flags flags) {
 
@@ -72,10 +90,6 @@ void parse_contents(const char *path, t_syst **dirs, t_syst **files, t_flags fla
 	while ((entry = readdir(pdir)) != NULL) {
 
 		if (!flags.a && entry->d_name[0] == '.')
-			continue;
-
-		if (entry->d_name[0] == '.' && (entry->d_name[1] == '\0'
-				|| (entry->d_name[1] == '.' && entry->d_name[2] == '\0')))
 			continue;
 
 		node = ft_calloc(1, sizeof(t_syst));
@@ -99,9 +113,9 @@ void parse_contents(const char *path, t_syst **dirs, t_syst **files, t_flags fla
 		}
 
 		if (S_ISDIR(node->info.st_mode))
-			add_node(dirs, node);
+			add_node(dirs, node, flags);
 		else
-			add_node(files, node);
+			add_node(files, node, flags);
 	}
 	closedir(pdir);
 }
