@@ -5,6 +5,16 @@ int ft_error(char *str) {
 	return (1);
 }
 
+char *add_spaces(int count) {
+	static char spaces[100];
+	int i = 0;
+	for (i = 0; i < count; i++) {
+		spaces[i] = ' ';
+	}
+	spaces[i] = '\0';
+	return spaces;
+}
+
 static int name_cmp(const char *left, const char *right)
 {
 	while (*left && *left == *right)
@@ -33,7 +43,7 @@ char *get_file_permissions(mode_t mode) {
 	return permissions;
 }
 
-void print_long_entry(t_syst *current) {
+void print_long_entry(t_syst *current, int permission_w, int link_w, int user_w, int group_w, int size_w, int time_w) {
 	struct passwd	*user;
 	struct group	*group;
 	char			*time, *modes;
@@ -46,12 +56,20 @@ void print_long_entry(t_syst *current) {
 	char time_buf[13];
 	strftime(time_buf, sizeof(time_buf),
     	"%b %e %H:%M", localtime(&current->info.st_mtime));
-	ft_printf("%s %d %s %s %d %s %s\n",
+	ft_printf("%s%s %s%d %s%s %s%s %s%d %s%s %s%s\n",
+		add_spaces(permission_w - ft_strlen(modes)),
 		modes,
+		add_spaces(link_w - ft_strlen(ft_itoa((int)current->info.st_nlink))),
 		(int)current->info.st_nlink,
+		add_spaces(user_w - ft_strlen(user != NULL ? user->pw_name : "?")),
 		user != NULL ? user->pw_name : "?",
+		add_spaces(group_w - ft_strlen(group != NULL ? group->gr_name : "?")),
 		group != NULL ? group->gr_name : "?",
+		add_spaces(size_w - ft_strlen(ft_itoa((int)current->info.st_size))),
 		(int)current->info.st_size,
+		add_spaces(time_w - ft_strlen(time_buf)),
+		time_buf,
+		add_spaces(time_w - ft_strlen(time_buf)),
 		time_buf,
 		current->name);
 }
@@ -62,102 +80,101 @@ void print_entry(t_syst *node)
 		ft_printf("%s", node->name);
 }
 
-static void print_entries(t_syst *dirs, t_syst *files)
+static void print_entries(t_syst *files)
 {
-	while (dirs != NULL || files != NULL)
+	while (files != NULL)
 	{
-		if (files == NULL
-			|| (dirs != NULL && name_cmp(dirs->name, files->name) < 0))
-		{
-			print_entry(dirs);
-			dirs = dirs->next;
-		}
-		else
-		{
-			print_entry(files);
-			files = files->next;
-		}
-		if (dirs != NULL || files != NULL)
+		print_entry(files);
+		files = files->next;
+		if (files != NULL)
 			ft_printf(" ");
 	}
+	ft_printf("\n");
 }
 
-long block_len(t_syst *dirs, t_syst *files)
+long block_len(t_syst *files)
 {
 	long total = 0;
-	while (dirs != NULL || files != NULL)
+	while (files != NULL)
 	{
-		if (files == NULL
-			|| (dirs != NULL && name_cmp(dirs->name, files->name) < 0))
-		{
-			total += dirs->info.st_blocks;
-			dirs = dirs->next;
-		}
-		else
-		{
-			total += files->info.st_blocks;
-			files = files->next;
-		}
+		total += files->info.st_blocks;
+		files = files->next;
 	}
 	return total;
 }
 
-static void print_long_entries(t_syst *dirs, t_syst *files)
+static void print_long_entries(t_syst *files)
 {
-	long total = block_len(dirs, files);
+	long total = block_len(files);
 	ft_printf("total %d\n", (int)(total / 2));
-	while(dirs != NULL || files != NULL)
+	int permission_w = 0, link_w = 0, user_w = 0, group_w = 0, size_w = 0, time_w = 0; // for each column, find the max width for proper alignment
+	t_syst *temp = files;
+	while (temp != NULL)
 	{
-		if (files == NULL
-			|| (dirs != NULL && name_cmp(dirs->name, files->name) < 0))
-		{
-			print_long_entry(dirs);
-			dirs = dirs->next;
+		int len;
+		len = ft_strlen(get_file_permissions(temp->info.st_mode));
+		if (len > permission_w)
+			permission_w = len;
+		len = ft_strlen(ft_itoa((int)temp->info.st_nlink));
+		if (len > link_w)
+			link_w = len;
+		struct passwd *user = getpwuid(temp->info.st_uid);
+		if (user != NULL) {
+			len = ft_strlen(user->pw_name);
+			if (len > user_w)
+				user_w = len;
 		}
-		else
-		{
-			print_long_entry(files);
-			files = files->next;
+		struct group *group = getgrgid(temp->info.st_gid);
+		if (group != NULL) {
+			len = ft_strlen(group->gr_name);
+			if (len > group_w)
+				group_w = len;
 		}
+		len = ft_strlen(ft_itoa((int)temp->info.st_size));
+		if (len > size_w)
+			size_w = len;
+		char time_buf[13];
+		strftime(time_buf, sizeof(time_buf),
+			"%b %e %H:%M", localtime(&temp->info.st_mtime));
+		len = ft_strlen(time_buf);
+		if (len > time_w)
+			time_w = len;
+		temp = temp->next;
+	}
+	while (files != NULL)
+	{
+		print_long_entry(files, permission_w, link_w, user_w, group_w, size_w, time_w);
+		files = files->next;
 	}
 }
 
-
 static void list_recursive(const char *path, t_flags flags)
 {
-    t_syst *dirs;
     t_syst *files;
     t_syst *current;
 
-    parse_contents(path, &dirs, &files, flags);
+    parse_contents(path, &files, flags);
 
     if (flags.l)
-        print_long_entries(dirs, files);
+        print_long_entries(files);
     else
-        print_entries(dirs, files);
-
-    current = dirs;
-    while (current != NULL)
-    {
-        ft_printf("\n%s:\n", current->path);
-        list_recursive(current->path, flags);
-        current = current->next;
-    }
+        print_entries(files);
 }
 
 int ft_ls(t_ls *ls) {
 	// Implementation of the ft_ls function
 	// This function will handle the logic for listing files and directories
-	parse_contents(ls->start_path, &ls->dirs, &ls->files, ls->flags);
+	parse_contents(ls->start_path, &ls->files, ls->flags);
 	t_syst *current;
-	if (ls->dirs == NULL && ls->files == NULL) {
-		return (0);
+	current = ls->files;
+	if (ls->files == NULL) {
+		return (1);
 	}
 	if (ls->flags.R)
 		list_recursive(ls->start_path, ls->flags);
 	else if (ls->flags.l)
-		print_long_entries(ls->dirs, ls->files);
+		print_long_entries(ls->files);
 	else
-		print_entries(ls->dirs, ls->files);
+		print_entries(ls->files);
 	return 0;
 }

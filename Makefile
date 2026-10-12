@@ -34,7 +34,6 @@ all: $(LIBFT) $(PRINTF) $(NAME)
 	@echo "Compiling $(NAME)..."
 
 $(LIBFT):
-	@echo "Compiling libft with bonus functions (make bonus)..."
 	@make -C $(LIBFT_DIR) bonus
 
 $(PRINTF):

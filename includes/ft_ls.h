@@ -28,8 +28,14 @@ typedef struct s_flags {
 	bool t; // sort by time
 } t_flags;
 
+typedef enum e_type {
+	FILE_TYPE,
+	DIR_TYPE
+} t_type;
+
 typedef struct s_syst { // Stores file/directory information
 	struct stat 	info;
+	t_type 			type;
 	char 			*name;
 	char 			*path;
 	struct s_syst 	*content;
@@ -41,15 +47,14 @@ typedef struct s_ls {
 	char 			*start_path;
 	DIR 			*pdir;
 	struct dirent 	*entry;
-	t_syst 			*dirs;
 	t_syst 			*files;
 
 } t_ls;
 
 int	 ft_error(char *str);
 int	 ft_ls(t_ls *ls);
-void parse_contents(const char *path, t_syst **dirs, t_syst **files, t_flags flags);
-void parse_flags(t_ls *ls, char **av, int ac, int i);
+void parse_contents(const char *path, t_syst **files, t_flags flags);
+int parse_flags(t_ls *ls, char **av, int ac, int i);
 
 
 #endif

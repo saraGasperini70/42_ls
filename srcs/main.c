@@ -3,9 +3,19 @@
 int main(int ac, char **av) {
 	t_ls *ls;
 	ls = ft_calloc(1, sizeof(t_ls));
-	parse_flags(ls, av, ac, 1);
-	ft_ls(ls);
-	free(ls->dirs);
+	int result = 0;
+	if (ls == NULL) {
+		ft_printf("Error: Memory allocation failed\n");
+		return (1);
+	}
+	result = parse_flags(ls, av, ac, 1);
+	if (result != 0) {
+		return (1);
+	}
+	result = ft_ls(ls);
+	if (result != 0) {
+		return (1);
+	}
 	free(ls->files);
 	free(ls);
 	return (0);

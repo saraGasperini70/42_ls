@@ -1,6 +1,6 @@
 #include "../includes/ft_ls.h"
 
-void parse_flags(t_ls *ls, char **av, int ac, int i) {
+int parse_flags(t_ls *ls, char **av, int ac, int i) {
 	ls->start_path = ".";
 	if (ac > 1) {
 		// Parse command line arguments and set flags accordingly
@@ -26,7 +26,7 @@ void parse_flags(t_ls *ls, char **av, int ac, int i) {
 							break;
 						default:
 							ft_printf("Error: invalid option: -%c\n", av[i][j]);
-							return ;
+							return (1);
 					}
 				}
 			} else {
@@ -35,12 +35,14 @@ void parse_flags(t_ls *ls, char **av, int ac, int i) {
 				ls->pdir = opendir(av[i]);
 				if (ls->pdir == NULL) {
 					ft_error(ft_strjoin("Cannot access '", ft_strjoin(ft_strdup(av[i]), "'")));
-					return ;
+					return (1);
 				}
 			}
 		}
 	}
+	return (0);
 }
+
 static int compare_nodes(t_syst *left, t_syst *right, t_flags flags)
 {
 	int result = 0;
@@ -74,14 +76,13 @@ static void add_node(t_syst **list, t_syst *node, t_flags flags) {
 }
 
 
-void parse_contents(const char *path, t_syst **dirs, t_syst **files, t_flags flags) {
+void parse_contents(const char *path, t_syst **files, t_flags flags) {
 
 	DIR 			*pdir;
 	struct dirent	*entry;
 	char 			*dir_path;
 	t_syst 			*node;
 
-	*dirs = NULL;
 	*files = NULL;
 	pdir = opendir(path);
 	if (pdir == NULL)
@@ -104,6 +105,7 @@ void parse_contents(const char *path, t_syst **dirs, t_syst **files, t_flags fla
 
 		node->name = ft_strdup(entry->d_name);
 		node->path = dir_path;
+		node->type = (entry->d_type == DT_DIR) ? DIR_TYPE : FILE_TYPE;
 
 		if (stat(node->path, &node->info) == -1) {
 			free(node->name);
@@ -112,10 +114,7 @@ void parse_contents(const char *path, t_syst **dirs, t_syst **files, t_flags fla
 			continue;
 		}
 
-		if (S_ISDIR(node->info.st_mode))
-			add_node(dirs, node, flags);
-		else
-			add_node(files, node, flags);
+		add_node(files, node, flags);
 	}
 	closedir(pdir);
 }
