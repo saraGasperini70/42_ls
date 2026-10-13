@@ -8,6 +8,8 @@ int ft_error(char *str) {
 char *add_spaces(int count) {
 	static char spaces[100];
 	int i = 0;
+	if (count < 0)
+		count = 0;
 	for (i = 0; i < count; i++) {
 		spaces[i] = ' ';
 	}
@@ -56,21 +58,30 @@ void print_long_entry(t_syst *current, int permission_w, int link_w, int user_w,
 	char time_buf[13];
 	strftime(time_buf, sizeof(time_buf),
     	"%b %e %H:%M", localtime(&current->info.st_mtime));
-	ft_printf("%s%s %s%d %s%s %s%s %s%d %s%s %s%s\n",
+	ft_printf("%s%s",
 		add_spaces(permission_w - ft_strlen(modes)),
-		modes,
+		modes);
+
+	ft_printf("%s%d",
 		add_spaces(link_w - ft_strlen(ft_itoa((int)current->info.st_nlink))),
-		(int)current->info.st_nlink,
+		(int)current->info.st_nlink);
+
+	ft_printf(" %s%s",
 		add_spaces(user_w - ft_strlen(user != NULL ? user->pw_name : "?")),
-		user != NULL ? user->pw_name : "?",
+		user != NULL ? user->pw_name : "?");
+
+	ft_printf(" %s%s",
 		add_spaces(group_w - ft_strlen(group != NULL ? group->gr_name : "?")),
-		group != NULL ? group->gr_name : "?",
+		group != NULL ? group->gr_name : "?");
+
+	ft_printf(" %s%d",
 		add_spaces(size_w - ft_strlen(ft_itoa((int)current->info.st_size))),
-		(int)current->info.st_size,
+		(int)current->info.st_size);
+
+	ft_printf(" %s%s",
 		add_spaces(time_w - ft_strlen(time_buf)),
-		time_buf,
-		add_spaces(time_w - ft_strlen(time_buf)),
-		time_buf,
+		time_buf);
+	ft_printf(" %s\n",
 		current->name);
 }
 
@@ -148,17 +159,30 @@ static void print_long_entries(t_syst *files)
 	}
 }
 
-static void list_recursive(const char *path, t_flags flags)
+static void list_recursive(const char *path, t_flags flags, bool print_header)
 {
-    t_syst *files;
-    t_syst *current;
+	t_syst	*files;
+	t_syst	*current;
 
-    parse_contents(path, &files, flags);
+	parse_contents(path, &files, flags);
+	if (print_header)
+		ft_printf("%s:\n", path);
 
-    if (flags.l)
-        print_long_entries(files);
-    else
-        print_entries(files);
+	if (flags.l)
+		print_long_entries(files);
+	else
+		print_entries(files);
+
+	current = files;
+	while (current != NULL)
+	{
+		if (S_ISDIR(current->info.st_mode))
+		{
+			ft_printf("\n");
+			list_recursive(current->path, flags, true);
+		}
+		current = current->next;
+	}
 }
 
 int ft_ls(t_ls *ls) {
@@ -170,8 +194,9 @@ int ft_ls(t_ls *ls) {
 	if (ls->files == NULL) {
 		return (1);
 	}
-	if (ls->flags.R)
-		list_recursive(ls->start_path, ls->flags);
+	if (ls->flags.R) {
+		list_recursive(ls->start_path, ls->flags, true);
+	}
 	else if (ls->flags.l)
 		print_long_entries(ls->files);
 	else
