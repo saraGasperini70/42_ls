@@ -12,6 +12,12 @@
 #include <grp.h>
 #include <time.h>
 
+typedef enum e_color {
+	ALWAYS,
+	NEVER,
+	AUTO
+} t_color;
+
 typedef struct s_map { // trying to reimplement C++ std::map if needed
 	struct s_map 	*prev;
 	char 			*key;
@@ -21,11 +27,15 @@ typedef struct s_map { // trying to reimplement C++ std::map if needed
 } t_map;
 
 typedef struct s_flags {
-	bool a; // all
-	bool l; // long format
-	bool r; // reverse order
-	bool R; // recursive
-	bool t; // sort by time
+	bool a; 	// all
+	bool l; 	// long format
+	bool r; 	// reverse order
+	bool R; 	// recursive
+	bool t; 	// sort by time
+	bool l1; 	// list one per line
+	bool p; 	// = append / to directories
+	t_color	color; 	// color output
+	bool h; 	// human readable sizes
 } t_flags;
 
 typedef enum e_type {
@@ -38,7 +48,6 @@ typedef struct s_syst { // Stores file/directory information
 	t_type 			type;
 	char 			*name;
 	char 			*path;
-	struct s_syst 	*content;
 	struct s_syst 	*next;
 } t_syst;
 
@@ -55,6 +64,6 @@ int	 ft_error(char *str);
 int	 ft_ls(t_ls *ls);
 void parse_contents(const char *path, t_syst **files, t_flags flags);
 int parse_flags(t_ls *ls, char **av, int ac, int i);
-
+void free_syst_list(t_syst *list);
 
 #endif

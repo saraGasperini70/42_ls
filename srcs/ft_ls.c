@@ -27,6 +27,23 @@ static int name_cmp(const char *left, const char *right)
 	return ((unsigned char)*left - (unsigned char)*right);
 }
 
+static int number_len(long number)
+{
+	int length = 1;
+
+	if (number < 0)
+	{
+		length++;
+		number = -number;
+	}
+	while (number >= 10)
+	{
+		number /= 10;
+		length++;
+	}
+	return (length);
+}
+
 char *get_file_permissions(mode_t mode) {
 	static char permissions[11];
 
@@ -62,8 +79,8 @@ void print_long_entry(t_syst *current, int permission_w, int link_w, int user_w,
 		add_spaces(permission_w - ft_strlen(modes)),
 		modes);
 
-	ft_printf("%s%d",
-		add_spaces(link_w - ft_strlen(ft_itoa((int)current->info.st_nlink))),
+	ft_printf(" %s%d",
+		add_spaces(link_w - number_len((long)(int)current->info.st_nlink)),
 		(int)current->info.st_nlink);
 
 	ft_printf(" %s%s",
@@ -75,7 +92,7 @@ void print_long_entry(t_syst *current, int permission_w, int link_w, int user_w,
 		group != NULL ? group->gr_name : "?");
 
 	ft_printf(" %s%d",
-		add_spaces(size_w - ft_strlen(ft_itoa((int)current->info.st_size))),
+		add_spaces(size_w - number_len((long)(int)current->info.st_size)),
 		(int)current->info.st_size);
 
 	ft_printf(" %s%s",
@@ -91,7 +108,7 @@ void print_entry(t_syst *node)
 		ft_printf("%s", node->name);
 }
 
-static void print_entries(t_syst *files)
+static void print_entries(t_syst *files, t_flags flags)
 {
 	while (files != NULL)
 	{
@@ -99,6 +116,8 @@ static void print_entries(t_syst *files)
 		files = files->next;
 		if (files != NULL)
 			ft_printf(" ");
+		if (flags.l1)
+			ft_printf("\n");
 	}
 	ft_printf("\n");
 }
@@ -126,7 +145,7 @@ static void print_long_entries(t_syst *files)
 		len = ft_strlen(get_file_permissions(temp->info.st_mode));
 		if (len > permission_w)
 			permission_w = len;
-		len = ft_strlen(ft_itoa((int)temp->info.st_nlink));
+		len = number_len((long)(int)temp->info.st_nlink);
 		if (len > link_w)
 			link_w = len;
 		struct passwd *user = getpwuid(temp->info.st_uid);
@@ -141,7 +160,7 @@ static void print_long_entries(t_syst *files)
 			if (len > group_w)
 				group_w = len;
 		}
-		len = ft_strlen(ft_itoa((int)temp->info.st_size));
+		len = number_len((long)(int)temp->info.st_size);
 		if (len > size_w)
 			size_w = len;
 		char time_buf[13];
@@ -171,18 +190,21 @@ static void list_recursive(const char *path, t_flags flags, bool print_header)
 	if (flags.l)
 		print_long_entries(files);
 	else
-		print_entries(files);
+		print_entries(files, flags);
 
 	current = files;
 	while (current != NULL)
 	{
-		if (S_ISDIR(current->info.st_mode))
+		if (S_ISDIR(current->info.st_mode)
+			&& ft_strncmp(current->name, ".", 2) != 0
+			&& ft_strncmp(current->name, "..", 3) != 0)
 		{
 			ft_printf("\n");
 			list_recursive(current->path, flags, true);
 		}
 		current = current->next;
 	}
+	free_syst_list(files);
 }
 
 int ft_ls(t_ls *ls) {
@@ -200,6 +222,6 @@ int ft_ls(t_ls *ls) {
 	else if (ls->flags.l)
 		print_long_entries(ls->files);
 	else
-		print_entries(ls->files);
+		print_entries(ls->files, ls->flags);
 	return 0;
 }

@@ -1,5 +1,18 @@
 #include "../includes/ft_ls.h"
 
+void free_syst_list(t_syst *list) {
+	t_syst *current = list;
+	t_syst *next;
+
+	while (current != NULL) {
+		next = current->next;
+		free(current->name);
+		free(current->path);
+		free(current);
+		current = next;
+	}
+}
+
 int main(int ac, char **av) {
 	t_ls *ls;
 	ls = ft_calloc(1, sizeof(t_ls));
@@ -10,13 +23,18 @@ int main(int ac, char **av) {
 	}
 	result = parse_flags(ls, av, ac, 1);
 	if (result != 0) {
+		free(ls);
 		return (1);
 	}
 	result = ft_ls(ls);
 	if (result != 0) {
+		free_syst_list(ls->files);
+		free(ls);
 		return (1);
 	}
-	free(ls->files);
+	free_syst_list(ls->files);
+	//free(ls->files);
+	//free(ls->start_path);
 	free(ls);
 	return (0);
 }

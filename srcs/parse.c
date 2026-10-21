@@ -24,6 +24,28 @@ int parse_flags(t_ls *ls, char **av, int ac, int i) {
 						case 't': // sort by time
 							ls->flags.t = true;
 							break;
+						case '1': // list one per line
+							ls->flags.l1 = true;
+							break;
+						case 'p': // append / to directories
+							ls->flags.p = true;
+							break;
+						case 'h': // human readable sizes
+							ls->flags.h = true;
+							break;
+						case '-':
+							// Handle --color option
+							if (ft_strcmp(av[i], "--color") == 0) {
+								ls->flags.color = AUTO;
+							} else if (ft_strcmp(av[i], "--color=always") == 0) {
+								ls->flags.color = ALWAYS;
+							} else if (ft_strcmp(av[i], "--color=never") == 0) {
+								ls->flags.color = NEVER;
+							} else {
+								ft_printf("Error: invalid option: %s\n", av[i]);
+								return (1);
+							}
+							break;
 						default:
 							ft_printf("Error: invalid option: -%c\n", av[i][j]);
 							return (1);
@@ -31,10 +53,20 @@ int parse_flags(t_ls *ls, char **av, int ac, int i) {
 				}
 			} else {
 				ls->start_path = av[i];
+				if (access(av[i], F_OK) == -1) {
+					char *message;
+					char *full_message;
 
-				ls->pdir = opendir(av[i]);
-				if (ls->pdir == NULL) {
-					ft_error(ft_strjoin("Cannot access '", ft_strjoin(ft_strdup(av[i]), "'")));
+					message = ft_strjoin("Cannot access '", av[i]);
+					full_message = message != NULL
+						? ft_strjoin(message, "'") : NULL;
+					free(message);
+					if (full_message != NULL) {
+						ft_error(full_message);
+						free(full_message);
+					} else {
+						ft_error("Cannot access path");
+					}
 					return (1);
 				}
 			}
@@ -80,7 +112,6 @@ void parse_contents(const char *path, t_syst **files, t_flags flags) {
 
 	DIR 			*pdir;
 	struct dirent	*entry;
-	char 			*dir_path;
 	t_syst 			*node;
 
 	*files = NULL;
@@ -96,16 +127,28 @@ void parse_contents(const char *path, t_syst **files, t_flags flags) {
 		node = ft_calloc(1, sizeof(t_syst));
 		if (node == NULL)
 			break;
-		dir_path = ft_strjoin(ft_strdup(path), ft_strjoin(ft_strdup("/"), ft_strdup(entry->d_name)));
+		char *path_copy = ft_strjoin("/", entry->d_name);
+		if (path_copy == NULL) {
+			free(node);
+			break;
+		}
+		char *dir_path = ft_strjoin(path, path_copy);
 
 		if (dir_path == NULL) {
 			free(node);
+			free(path_copy);
 			break;
 		}
 
 		node->name = ft_strdup(entry->d_name);
 		node->path = dir_path;
 		node->type = (entry->d_type == DT_DIR) ? DIR_TYPE : FILE_TYPE;
+		free(path_copy);
+		if (node->name == NULL) {
+			free(node->path);
+			free(node);
+			break;
+		}
 
 		if (stat(node->path, &node->info) == -1) {
 			free(node->name);
