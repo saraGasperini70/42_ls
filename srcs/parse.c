@@ -35,11 +35,11 @@ int parse_flags(t_ls *ls, char **av, int ac, int i) {
 							break;
 						case '-':
 							// Handle --color option
-							if (ft_strcmp(av[i], "--color") == 0) {
+							if (ft_strncmp(av[i], "--color", 7) == 0) {
 								ls->flags.color = AUTO;
-							} else if (ft_strcmp(av[i], "--color=always") == 0) {
+							} else if (ft_strncmp(av[i], "--color=always", 13) == 0) {
 								ls->flags.color = ALWAYS;
-							} else if (ft_strcmp(av[i], "--color=never") == 0) {
+							} else if (ft_strncmp(av[i], "--color=never", 13) == 0) {
 								ls->flags.color = NEVER;
 							} else {
 								ft_printf("Error: invalid option: %s\n", av[i]);

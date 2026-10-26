@@ -27,15 +27,15 @@ typedef struct s_map { // trying to reimplement C++ std::map if needed
 } t_map;
 
 typedef struct s_flags {
-	bool a; 	// all
-	bool l; 	// long format
-	bool r; 	// reverse order
-	bool R; 	// recursive
-	bool t; 	// sort by time
-	bool l1; 	// list one per line
-	bool p; 	// = append / to directories
-	t_color	color; 	// color output
-	bool h; 	// human readable sizes
+	bool a; 	// all DONE
+	bool l; 	// long format DONE
+	bool r; 	// reverse order DONE
+	bool R; 	// recursive DONE
+	bool t; 	// sort by time DONE
+	bool l1; 	// list one per line DONE
+	bool p; 	// = append / to directories DONE
+	t_color	color; 	// color output TODO
+	bool h; 	// human readable sizes TODO
 } t_flags;
 
 typedef enum e_type {

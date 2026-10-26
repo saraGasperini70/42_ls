@@ -113,11 +113,14 @@ static void print_entries(t_syst *files, t_flags flags)
 	while (files != NULL)
 	{
 		print_entry(files);
+		if (flags.p && S_ISDIR(files->info.st_mode))
+			ft_printf("/");
 		files = files->next;
-		if (files != NULL)
+		if (files != NULL) {
 			ft_printf(" ");
-		if (flags.l1)
-			ft_printf("\n");
+			if (flags.l1)
+				ft_printf("\n");
+		}
 	}
 	ft_printf("\n");
 }
